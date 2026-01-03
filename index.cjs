@@ -1,8 +1,10 @@
+// ======================== IMPORTS ========================
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const { Client, GatewayIntentBits } = require("discord.js");
 
+// ======================== CONFIG ========================
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -18,6 +20,7 @@ if (!DISCORD_BOT_TOKEN || !DISCORD_GUILD_ID || !DISCORD_API_SECRET) {
   process.exit(1);
 }
 
+// ======================== DISCORD CLIENT ========================
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("ready", () => {
@@ -26,6 +29,10 @@ client.once("ready", () => {
 
 client.login(DISCORD_BOT_TOKEN);
 
+// ======================== KEEP-ALIVE PING ========================
+app.get("/", (req, res) => res.send("Bot is alive"));
+
+// ======================== APPROVE ENDPOINT ========================
 app.post("/approve", async (req, res) => {
   const auth = req.headers.authorization || "";
   if (auth !== `Bearer ${DISCORD_API_SECRET}`) {
@@ -52,5 +59,6 @@ app.post("/approve", async (req, res) => {
   }
 });
 
+// ======================== START SERVER ========================
 app.listen(PORT, () => console.log(`Bot running on port ${PORT}`));
 
