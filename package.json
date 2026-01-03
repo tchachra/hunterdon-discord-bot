@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.cjs",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node index.cjs"
   },
@@ -12,10 +15,5 @@
     "cors": "^2.8.5",
     "discord.js": "^14.12.1"
   }
-"engines": {
-  "node": ">=18"
-}
-
-
 }
 

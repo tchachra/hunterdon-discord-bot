@@ -18,7 +18,6 @@ if (!DISCORD_BOT_TOKEN || !DISCORD_GUILD_ID || !DISCORD_API_SECRET) {
   process.exit(1);
 }
 
-// Discord Client
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("ready", () => {
@@ -27,7 +26,6 @@ client.once("ready", () => {
 
 client.login(DISCORD_BOT_TOKEN);
 
-// /approve endpoint
 app.post("/approve", async (req, res) => {
   const auth = req.headers.authorization || "";
   if (auth !== `Bearer ${DISCORD_API_SECRET}`) {
@@ -46,10 +44,6 @@ app.post("/approve", async (req, res) => {
       unique: true,
       reason: `Approved applicant: ${name} (${callsign})`
     });
-
-    // Optional: assign role (requires member object after they join)
-    // const member = await guild.members.fetch(userId);
-    // await member.roles.add(DISCORD_ROLE_ID);
 
     res.json({ invite: invite.url });
   } catch (err) {
