@@ -1,71 +1,46 @@
-// ==================== index.cjs ====================
-const { Client, GatewayIntentBits } = require("discord.js");
+// index.cjs
 const express = require("express");
 const bodyParser = require("body-parser");
-
-process.on("unhandledRejection", err => console.error("Unhandled Rejection:", err));
-process.on("uncaughtException", err => console.error("Uncaught Exception:", err));
+const cors = require("cors");
+const { Client, GatewayIntentBits } = require("discord.js");
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
-const API_SECRET = process.env.DISCORD_API_SECRET;
-const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const GUILD_ID = process.env.GUILD_ID;
-const ROLE_ID = process.env.ROLE_ID || null;
+// Discord Bot
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
+const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID;
+const DISCORD_API_SECRET = process.env.DISCORD_API_SECRET;
 
-if (!DISCORD_TOKEN || !API_SECRET || !GUILD_ID) {
+if (!DISCORD_BOT_TOKEN || !DISCORD_GUILD_ID || !DISCORD_ROLE_ID || !DISCORD_API_SECRET) {
   console.error("Missing required environment variables!");
   process.exit(1);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+client.login(DISCORD_BOT_TOKEN);
 
-client.once("ready", () => console.log(`Discord bot logged in as ${client.user.tag}`));
-
-// Optional: assign role when member joins
-client.on("guildMemberAdd", async member => {
-  if (member.guild.id !== GUILD_ID) return;
-  if (!ROLE_ID) return;
-  try {
-    await member.roles.add(ROLE_ID);
-    console.log(`Assigned role to ${member.user.tag}`);
-  } catch (err) {
-    console.log(`Role assignment failed (safe to ignore):`, err.message);
-  }
-});
-
-// Approve endpoint
+// Simple /approve endpoint
 app.post("/approve", async (req, res) => {
+  const auth = req.headers.authorization || "";
+  if (auth !== `Bearer ${DISCORD_API_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const { name, email } = req.body;
   try {
-    if (req.headers.authorization !== `Bearer ${API_SECRET}`) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const guild = await client.guilds.fetch(GUILD_ID);
-    const channel = guild.channels.cache.find(
-      c => c.isTextBased() && c.permissionsFor(guild.members.me).has("CreateInstantInvite")
-    );
-    if (!channel) return res.json({ invite: null });
-
-    const invite = await channel.createInvite({
-      maxUses: 1,
-      unique: true,
-      reason: `Approved applicant: ${req.body.name}`
-    });
-
-    console.log(`Generated invite for ${req.body.name}: ${invite.url}`);
-    return res.json({ invite: invite.url });
-
+    const guild = await client.guilds.fetch(DISCORD_GUILD_ID);
+    // Normally you would create an invite or add a role here
+    const invite = await guild.invites.create(guild.channels.cache.first(), { maxUses: 1 });
+    res.json({ invite: invite.url });
   } catch (err) {
-    console.error("Error in /approve:", err.message);
-    return res.json({ invite: null });
+    console.error(err);
+    res.status(500).json({ error: "Bot failed to generate invite" });
   }
 });
 
-app.get("/approve", (req, res) => res.send("Approve endpoint live. Use POST JSON."));
-
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Bot running on port ${PORT}`));
-client.login(DISCORD_TOKEN);
 
