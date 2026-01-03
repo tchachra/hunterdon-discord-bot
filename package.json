@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Hunterdon Discord bot",
   "main": "index.cjs",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.cjs"
   },
